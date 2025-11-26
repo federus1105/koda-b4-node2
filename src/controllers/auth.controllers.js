@@ -19,7 +19,7 @@ import { getPrisma } from '../libs/prisma.js';
  * @return {object} 409 - Username already exists
  */
 export async function Register(req, res) {  
-    const prisma = await getPrisma();
+    const prisma = getPrisma();
      const results =  validationResult(req)
     if  (!results.isEmpty()) {
         res.json({
@@ -29,7 +29,7 @@ export async function Register(req, res) {
         })
     }
 
-    const { email, username, password } = req.body;
+    const { email, fullName, password } = req.body;
     
     try {
         const existingUser = await prisma.User.findUnique({
@@ -77,7 +77,7 @@ export async function Register(req, res) {
  * @return {object} 200 - register response
  * @return {object} 409 - Username already exists
  */
-export  function login(req, res) {
+export async function login(req, res) {
     const results =  validationResult(req)
     if  (!results.isEmpty()) {
         res.json({
@@ -86,18 +86,35 @@ export  function login(req, res) {
             results: results.array()
         })
     }
-    const { email, password } = req.body;
-    const user = userModel.findUser(email);
-    if (!user || user.password !== password) {
-        return res.status(401).json({ 
+        const { email, password } = req.body;
+
+    try {
+        const prisma = getPrisma();
+
+        const user = await prisma.User.findUnique({
+            where: { email }
+        });
+
+        if (!user || user.password !== password) {
+            return res.status(401).json({
+                success: false,
+                message: 'wrong email or password'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Login successfully',
+            results: { 
+                email: user.email, 
+                fullName: user.fullName }
+        });
+
+    } catch (error) {
+        res.status(500).json({
             success: false,
-            message: 'wrong username or password' 
+            message: 'Internal server error',
+            error: error.message
         });
     }
-
-    res.status(200).json({
-         success: true,
-         message: 'Login succesfully', 
-         results:  { email: user.email }
-        });
 }
