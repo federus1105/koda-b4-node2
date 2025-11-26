@@ -171,25 +171,35 @@ export async function addProduct(req, res) {
  * @return {object} 200 - Product updated successfully
  * @return {object} 404 - Product not found
  */
-function editProduct(req, res) {
-    const productId = req.params.id;
-    const updates = req.body; 
-
-    const isUpdated = productModel.editProduct(productId, updates);
-
-    if (isUpdated) {
-        res.status(200).json({
-            success: true,
-            message: 'Product updated successfully',
-            results: { id: productId, ...updates },
+export async function editProduct(req, res) {
+    try {
+        const productId = req.params.id;
+        const prisma = getPrisma();
+        const updates = req.body; 
+        const isUpdated = await prisma.product.update({
+            where: {id: productId},
+            data: updates
         });
-    } else {
-        res.status(404).json({
+        if (isUpdated) {
+            res.status(200).json({
+                success: true,
+                message: 'Product updated successfully',
+                results: { id: productId, ...updates },
+            });
+        } else {
+            res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+    } catch (error ) {
+        res.status(500).json({
             success: false,
-            message: 'Product not found'
-        });
+            message: 'Internal server error',
+            results: error.message
+        })
     }
 }
 
 
-export default {getListProduct, getProductById, deleteproducbyId, uploadProductImage, editProduct};
+export default {getListProduct, getProductById, deleteproducbyId, uploadProductImage};
