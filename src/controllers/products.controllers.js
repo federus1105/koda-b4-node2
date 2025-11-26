@@ -1,4 +1,4 @@
-import productModel from '../models/products.models.js'
+import { getPrisma } from '../libs/prisma.js';
 
 /**
  * GET /product
@@ -138,23 +138,28 @@ function uploadProductImage(req, res) {
  * @summary Add a new product
  * @tags Products
  * @param {CreateProduct} request.body.required
- * @return {object} 201 - Product created successfully
+ * @return {object} 200  - Product created successfully
  * @return {object} 400 - Name and price are required
  */
-function addProduct(req, res) {
-    const { name, price } = req.body;
-    if (!name || !price) {
-        return res.status(400).json({
-            success: false,
-            message: 'Name and price are required'
+export async function addProduct(req, res) {
+    try {
+        const prisma = getPrisma();
+         const { name, price } = req.body;
+        const newProduct = await prisma.product.create({
+            data: { name, price}
         });
+        res.status(200).json({
+            success: true,
+            message: 'Product added successfully',
+            results: newProduct
+        });
+    } catch (error) {
+        res.status(500).json({
+            success:false,
+            message: "internal server error",
+            results: error.message
+        })
     }
-    const newProduct = productModel.addProduct(name, price);
-    res.status(201).json({
-        success: true,
-        message: 'Product added successfully',
-        results: newProduct
-    });
 }
 
 /**
@@ -187,4 +192,4 @@ function editProduct(req, res) {
 }
 
 
-export default {getListProduct, getProductById, deleteproducbyId, uploadProductImage, editProduct, addProduct};
+export default {getListProduct, getProductById, deleteproducbyId, uploadProductImage, editProduct};
