@@ -1,5 +1,6 @@
 import { validationResult } from 'express-validator';
 import userModel from '../models/auth.models.js'
+import { getPrisma } from '../libs/prisma.js';
 
 /**
  * Register user
@@ -17,7 +18,8 @@ import userModel from '../models/auth.models.js'
  * @return {object} 200 - register response
  * @return {object} 409 - Username already exists
  */
-export function Register(req, res) {  
+export async function Register(req, res) {  
+    const prisma = await getPrisma();
      const results =  validationResult(req)
     if  (!results.isEmpty()) {
         res.json({
@@ -26,22 +28,38 @@ export function Register(req, res) {
             results: results.array()
         })
     }
-    const { email, username, password } = req.body;
-    const existingUser = userModel.findUser(email);
-    if (existingUser) {
-        return res.status(409).json({
-            success: false,
-            message: 'email already exists' 
-        });
-    }
 
-    let newUser = { email, username, password };
-    userModel.users.push(newUser);
-    res.status(200).json({
-        success: true,
-        message: 'User registered successfully',
-        results:  { email: newUser.email }
-    });
+    const { email, username, password } = req.body;
+    
+    try {
+        const existingUser = await prisma.User.findUnique({
+            where: { email }
+        });
+
+        if (existingUser) {
+            return res.status(409).json({
+                success: false,
+                message: 'Email already exists'
+            });
+        }
+
+        const newUser = await prisma.User.create({
+            data: { email, fullName, password }
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'User registered successfully',
+            results: { email: newUser.email }
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+ }
  
 
 /**
@@ -59,7 +77,7 @@ export function Register(req, res) {
  * @return {object} 200 - register response
  * @return {object} 409 - Username already exists
  */
-export function login(req, res) {
+export  function login(req, res) {
     const results =  validationResult(req)
     if  (!results.isEmpty()) {
         res.json({
