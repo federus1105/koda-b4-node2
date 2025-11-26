@@ -16,6 +16,7 @@
   "type": "module",
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.0.1",
+    "@prisma/client": "^7.0.1",
     "express": "^5.1.0",
     "express-jsdoc-swagger": "^1.8.0",
     "express-validator": "^7.3.1",
