@@ -1,6 +1,7 @@
 import { validationResult } from 'express-validator';
 import userModel from '../models/auth.models.js'
 import { getPrisma } from '../libs/prisma.js';
+import jwt from 'jsonwebtoken';
 
 /**
  * Register user
@@ -102,13 +103,14 @@ export async function login(req, res) {
             });
         }
 
+        const token = jwt.sign({id: user.id}, process.env.JWT_SECRET, {
+            expiresIn: 15 * 60 * 60,
+        })
         res.status(200).json({
             success: true,
             message: 'Login successfully',
-            results: { 
-                email: user.email, 
-                fullName: user.fullName }
-        });
+            results: {token}
+});
 
     } catch (error) {
         res.status(500).json({
